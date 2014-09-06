@@ -1,0 +1,6 @@
+{
+  "development": {
+    "request": "http://github.com/jkroso/request/tarball/4671228",
+    "jest": "http://github.com/jkroso/jest/tarball/master"
+  }
+}
