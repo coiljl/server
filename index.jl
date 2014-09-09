@@ -129,6 +129,5 @@ function error_string(error::Exception, backtrace::Array)
   io = IOBuffer()
   Base.showerror(io, error)
   Base.show_backtrace(io, backtrace)
-  seekstart(io)
-  readall(io)
+  takebuf_string(io)
 end
