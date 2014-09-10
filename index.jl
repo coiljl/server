@@ -1,6 +1,6 @@
 import Base: TcpSocket, write, listen, serialize
-import JSON
 @require "./status_codes" status_codes
+@require "to-json" write_json
 
 export start, Request, Response
 
@@ -107,7 +107,7 @@ end
 # Maps mime types to `write` methods
 #
 const formatters = [
-  "application/json" => (io, data) -> write(io, JSON.json(data))
+  "application/json" => write_json
 ]
 
 ##
