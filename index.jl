@@ -60,7 +60,7 @@ function start(app::Function, port::Integer)
   server = listen(port)
   while true
     sock = accept(server)
-    @async handle(sock, app)
+    handle(sock, app)
   end
 end
 
@@ -76,13 +76,8 @@ function handle(sock::TcpSocket, app::Function)
   catch e
     Response(500, error_string(e, catch_backtrace()))
   end
-  try
-    write(sock, res)
-    close(sock)
-  catch e
-    write(STDOUT, error_string(e, catch_backtrace()))
-    rethrow(e)
-  end
+  write(sock, res)
+  close(sock)
 end
 
 ##
