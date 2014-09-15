@@ -1,6 +1,7 @@
-@require ".."
 import Base: write, serialize
-import JSON
+import JSON.parse
+Require.require("to-json")
+@require ".."
 
 ##
 # Compose a sequence of transducers (for lack of a better word)
@@ -45,7 +46,7 @@ function logger(next)
 end
 
 const parsers = [
-  "application/json" => (req) -> JSON.parse(buffer(req))
+  "application/json" => (req) -> parse(buffer(req))
 ]
 
 buffer(req::Request) = begin
@@ -77,7 +78,7 @@ end
 function echo(next)
   function middleware(req, res)
     res.data = req.data
-    res.meta["Content-Type"] = get(req.meta, "Content-Type", "text/plain")
+    res.meta["Content-Type"] = get(req.meta, "Accept", "text/plain")
     next(req, res)
   end
 end

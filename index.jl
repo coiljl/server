@@ -1,6 +1,5 @@
 import Base: TcpSocket, write, listen, writemime
 @require "./status_codes" status_codes
-@require "to-json"
 
 export start, Request, Response
 
