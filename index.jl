@@ -1,6 +1,6 @@
-import Base: TcpSocket, write, listen, serialize
+import Base: TcpSocket, write, listen, writemime
 @require "./status_codes" status_codes
-@require "to-json" write_json
+@require "to-json"
 
 export start, Request, Response
 
@@ -43,11 +43,11 @@ Response() = Response(200)
 ##
 # make Response objects pretty at the REPL
 #
-show(io::IO, r::Response) =
-  print(io,
+writemime(io::IO, ::MIME"text/plain", r::Response) =
+  write(io,
         "Response($(r.status) $(status_codes[r.status]), ",
         "$(length(r.meta)) Headers, ",
-        "$(sizeof(r.data)),  Bytes in Body)")
+        "$(sizeof(r.data)) Bytes in Body)")
 
 ##
 # Listen for HTTP requests on `port`. When one arrives it
@@ -83,41 +83,13 @@ end
 ##
 # Render a Response as an outgoing HTTP message
 #
-# However, the body of the response is not written using
-# `write` since this would limit your control over the
-# serialization format. Instead it defers to `Base.serialize`
-# which is extended to take an extra argument to specify
-# the "Content-Type"
-#
 function write(io::TcpSocket, r::Response)
   write(io, "HTTP/1.1 $(r.status) $(status_codes[r.status])")
   for (key,value) in r.meta
     write(io, "\r\n$key: $value")
   end
   write(io, "\r\n" ^ 2)
-  serialize(io, r.data, get(r.meta, "Content-Type", nothing))
-end
-
-##
-# Maps mime types to `write` methods
-#
-const formatters = [
-  "application/json" => write_json
-]
-
-##
-# Default serializer for when no Content-Type is set. It just lets
-# the generic function `write` choose based on the type of `data`
-#
-serialize(io::TcpSocket, data::Any, ::Nothing) = write(io, data)
-
-##
-# When Content-Type is a String look for the correct `write`
-# method in the `formatters` map
-#
-function serialize(io::Base.TcpSocket, data::Any, format::String)
-  format = split(format, "; ")[1]
-  get(formatters, format, write)(io, data)
+  writemime(io, get(r.meta, "Content-Type", "text/plain"), r.data)
 end
 
 function error_string(error::Exception, backtrace::Array)

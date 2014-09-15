@@ -4,6 +4,6 @@
     "jest": "http://github.com/jkroso/jest/tarball/master"
   },
   "production": {
-    "to-json": "http://github.com/jkroso/to-json/tarball/0.0.1"
+    "to-json": "http://github.com/jkroso/to-json/tarball/0.1.0"
   }
 }
