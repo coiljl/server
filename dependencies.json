@@ -3,5 +3,8 @@
     "request": "http://github.com/jkroso/request/tarball/4671228",
     "to-json": "http://github.com/jkroso/to-json/tarball/0.1.0",
     "jest": "http://github.com/jkroso/jest/tarball/0.0.1"
+  },
+  "production": {
+    "URI": "http://github.com/jkroso/URI/tarball/e946be2"
   }
 }

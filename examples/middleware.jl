@@ -40,7 +40,7 @@ function logger(next)
   function middleware(req, res)
     time = @elapsed ret = next(req, res)
     time = int(time * 1000)
-    println("$(res.status) $(req.path) $(time)ms")
+    println("$(res.status) $(req.uri.path) $(time)ms")
     ret
   end
 end

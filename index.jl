@@ -1,5 +1,6 @@
 import Base: TcpSocket, write, listen, writemime
 @require "./status_codes" status_codes
+@require "URI" URI
 
 export start, Request, Response
 
@@ -7,10 +8,9 @@ typealias Headers Dict{String,String}
 
 type Request
   verb::String  # valid HTTP method (e.g. "GET")
-  path::String  # requested resource (e.g. "/hello/world")
+  uri::URI      # requested resource (e.g. uri"/hello/world")
   meta::Headers # HTTP headers
   data::Any     # request body
-  state::Dict   # used to store various data during request processing
 end
 
 ##
@@ -25,7 +25,7 @@ Request(stream::TcpSocket) = begin
     key, value = split(line, ": ")
     meta[key] = value
   end
-  Request(verb, path, meta, stream, Dict())
+  Request(verb, URI(path), meta, stream)
 end
 
 type Response
@@ -82,7 +82,7 @@ end
 ##
 # Render a Response as an outgoing HTTP message
 #
-function write(io::TcpSocket, r::Response)
+function write(io::IO, r::Response)
   write(io, "HTTP/1.1 $(r.status) $(status_codes[r.status])")
   for (key,value) in r.meta
     write(io, "\r\n$key: $value")
