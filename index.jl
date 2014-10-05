@@ -40,15 +40,6 @@ Response(d::Any) = Response(200, d)
 Response() = Response(200)
 
 ##
-# make Response objects pretty at the REPL
-#
-writemime(io::IO, ::MIME"text/plain", r::Response) =
-  write(io,
-        "Response($(r.status) $(status_codes[r.status]), ",
-        "$(length(r.meta)) Headers, ",
-        "$(sizeof(r.data)) Bytes in Body)")
-
-##
 # Listen for HTTP requests on `port`. When one arrives it
 # handles it asynchronously in a separate task. However it will
 # immediately return to blocking while waiting for the next
