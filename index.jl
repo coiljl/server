@@ -73,7 +73,7 @@ function handle(sock::TcpSocket, app::Function)
   res = try
     app(req)
   catch e
-    Response(500, error_string(e, catch_backtrace()))
+    Response(500, (e, catch_backtrace()))
   end
   write(sock, res)
   close(sock)
@@ -91,9 +91,10 @@ function write(io::IO, r::Response)
   writemime(io, get(r.meta, "Content-Type", "text/plain"), r.data)
 end
 
-function error_string(error::Exception, backtrace::Array)
-  io = IOBuffer()
-  Base.showerror(io, error)
-  Base.show_backtrace(io, backtrace)
-  takebuf_string(io)
+##
+# Render errors as they appear in a TTY
+#
+function writemime(io::IO, ::MIME"text/plain", e::(Exception,Array))
+  Base.showerror(io, e[1])
+  Base.show_backtrace(io, e[2])
 end
