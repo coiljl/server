@@ -34,9 +34,9 @@ type Response
   data::Any
 end
 
+Response{T<:String}(s::Int, m::Dict{T,T}) = Response(s, m, nothing)
 Response(s::Int, d::Any) = Response(s, Headers(), d)
-Response(s::Int) = Response(s, Headers(), "")
-Response(d::Any) = Response(200, d)
+Response(s::Int) = Response(s, Headers())
 Response() = Response(200)
 
 ##
@@ -79,6 +79,8 @@ function write(io::IO, r::Response)
     write(io, "\r\n$key: $value")
   end
   write(io, "\r\n" ^ 2)
+  # support empty response bodies
+  r.data === nothing && return
   writemime(io, get(r.meta, "Content-Type", "text/plain"), r.data)
 end
 
@@ -89,3 +91,5 @@ function writemime(io::IO, ::MIME"text/plain", e::(Exception,Array))
   Base.showerror(io, e[1])
   Base.show_backtrace(io, e[2])
 end
+
+writemime(io::IO, ::MIME"text/plain", s::String) = write(io, s)

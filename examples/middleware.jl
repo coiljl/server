@@ -1,6 +1,6 @@
 import Base: write, serialize
 import JSON.parse
-Require.require("to-json")
+Requirer.require("to-json")
 @require ".."
 
 ##
@@ -79,6 +79,9 @@ function echo(next)
   function middleware(req, res)
     res.data = req.data
     res.meta["Content-Type"] = get(req.meta, "Accept", "text/plain")
+    if res.meta["Content-Type"] == "*/*"
+      res.meta["Content-Type"] = "text/plain"
+    end
     next(req, res)
   end
 end
