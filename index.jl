@@ -79,9 +79,14 @@ function write(io::IO, r::Response)
     write(io, "\r\n$key: $value")
   end
   write(io, "\r\n" ^ 2)
-  # support empty response bodies
-  r.data === nothing && return
-  writemime(io, get(r.meta, "Content-Type", "text/plain"), r.data)
+
+  if r.data === nothing
+    nothing
+  elseif isa(r.data, IO)
+    while !eof(r.data) write(io, read(r.data, Uint8)) end
+  else
+    writemime(io, get(r.meta, "Content-Type", "text/plain"), r.data)
+  end
 end
 
 ##
@@ -93,3 +98,4 @@ function writemime(io::IO, ::MIME"text/plain", e::(Exception,Array))
 end
 
 writemime(io::IO, ::MIME"text/plain", s::String) = write(io, s)
+writemime(io::IO, ::MIME"application/octet-stream", d) = write(io, d)
