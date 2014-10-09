@@ -1,8 +1,19 @@
+@require "Request" Request verb
 @require ".." start Response
 
-start(8000) do req
+function handle(::Request{:GET})
   Response(200, [
     "Content-Type"=>"text/plain",
     "Content-Length"=>"11"
-  ], "Hello world")
+  ], "Hello World")
 end
+
+function handle(r::Request)
+  msg = "That was a $(verb(r)) request"
+  Response(200, [
+    "Content-Type"=>"text/plain",
+    "Content-Length"=>string(sizeof(msg))
+  ], msg)
+end
+
+start(handle, 8000)
