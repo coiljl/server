@@ -11,9 +11,8 @@ import Base.Socket
 #
 function start(app::Function, port::Integer)
   server = listen(port)
-  while true
-    sock = accept(server)
-    handle(sock, app)
+  @schedule while true
+    handle(accept(server), app)
   end
 end
 
