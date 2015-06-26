@@ -5,11 +5,8 @@
   Response(200, ["Content-Type"=>"text/plain"])
 end
 
+@async @test isa(@catch(wait(start(r -> :invalid, 8001))), TypeError)
+@async get(":8001")
+
 @test get(":8000").meta["Content-Type"] == "text/plain"
 @test get(":8000").data == ""
-
-type NonWriteable end
-@test_throws Exception @sync begin
-  @async start(8001) do req NonWriteable() end
-  @async get(":8001")
-end
