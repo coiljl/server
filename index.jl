@@ -1,6 +1,5 @@
 @require "Response" Response
 @require "Request" Request
-import Base.Socket
 
 ##
 # Listen for HTTP requests on `port`. When one arrives it
@@ -21,13 +20,7 @@ end
 # return value back to the client before closing the
 # connection
 #
-function handle(sock::Socket, app::Function)
-  req = Request(sock)
-  res = try
-    app(req)
-  catch e
-    Response(500, (e, catch_backtrace()))
-  end
-  write(sock, res)
+function handle(sock::Base.Socket, app::Function)
+  write(sock, app(Request(sock))::Response)
   close(sock)
 end
