@@ -17,6 +17,7 @@ function start(app::Function, port::Integer)
     for sock in server
       # TODO: handle premature client side closing
       write(sock, app(Request(sock))::Response)
+      # TODO: handle keep-alive
       close(sock)
     end
   catch e
