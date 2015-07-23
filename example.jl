@@ -1,7 +1,7 @@
-@require "coiljl/Request" Request verb
-@require "coiljl/server" start Response
+@require "coiljl/server" start Response Request
 
 handle(r::Request{:GET}) = Response("Hello World")
-handle(r::Request) = Response("That was a $(verb(r)) request")
+handle{verb}(r::Request{verb}) = Response("That was a $verb request")
 
-start(handle, 8000)
+server = start(handle, 8000)
+server.closenotify |> wait

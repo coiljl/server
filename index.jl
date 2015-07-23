@@ -12,8 +12,29 @@ end
 # Listen for HTTP requests on `port`
 #
 function start(app::Function, port::Integer)
-  for sock in listen(port)
-    write(sock, app(Request(sock))::Response)
-    close(sock)
+  server = listen(port)
+  @schedule try
+    for sock in server
+      # TODO: handle premature client side closing
+      write(sock, app(Request(sock))::Response)
+      close(sock)
+    end
+  catch e
+    # TODO: figure out how to notify with the error
+    close(server)
   end
+  server
+end
+
+test("start") do
+  server = start(8000) do req::Request{:GET}
+    Response(200, ["Content-Type"=>"text/plain"])
+  end
+
+  @test `curl -sD - :8000` |> readall == """
+                                         HTTP/1.1 200 OK\r
+                                         Content-Type: text/plain\r
+                                         \r
+                                         """
+  close(server)
 end
