@@ -1,9 +1,9 @@
 
-dependencies: dependencies.json
-	@packin install --folder $@ --meta $<
-	@ln -snf .. $@/server
+dependencies: index.jl
+	@kip $<
+	@ln -snf ../.. $@/coiljl/server
 
 test: dependencies
-	@$</jest/bin/jest test
+	@jest test.jl
 
 .PHONY: test

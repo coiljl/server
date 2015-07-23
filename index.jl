@@ -1,5 +1,5 @@
-@require "Response" Response
-@require "Request" Request
+@require "coiljl/Response" Response
+@require "coiljl/Request" Request
 
 # Add iteration protocol
 if !method_exists(Base.start, (Base.TcpServer,))

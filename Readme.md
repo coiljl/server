@@ -1,16 +1,11 @@
-
 # server
 
 A simple base for building HTTP servers with Julia
 
-## Installation
-
-With [packin](//github.com/jkroso/packin): `packin add coiljl/server`
-
 ## API
 
 ```julia
-@require "server" start
+@require "coiljl/server" start
 ```
 
 ### start(app::Function, port::Int)
