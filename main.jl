@@ -41,6 +41,14 @@ immutable Request{method}
   data::IO
 end
 
+Base.show(io::IO, r::Request) = begin
+  print(io, typeof(r), '(', '"', r.uri, '"',  ',')
+  showcompact(io, r.meta)
+  print(io, ',')
+  showcompact(io, r.data)
+  print(io, ')')
+end
+
 """
 parse an incoming HTTP stream into a nice Request object
 """
@@ -63,6 +71,14 @@ immutable Response{T}
   status::Integer
   meta::Dict
   data::T
+end
+
+Base.show(io::IO, r::Response) = begin
+  print(io, "Response(", Int(r.status), ",")
+  showcompact(io, r.meta)
+  print(io, ",")
+  showcompact(io, r.data)
+  print(io, ')')
 end
 
 Response(s::Integer=200) = Response(s, Headers())
