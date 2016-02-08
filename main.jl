@@ -23,7 +23,7 @@ println("server listening on http://localhost:3000")
 wait(server)
 ```
 """
-serve(fn::Function, port::Integer) = begin
+serve(fn::Any, port::Integer) = begin
   server = listen(port)
   task = @schedule while isopen(server)
     sock = accept(server)
