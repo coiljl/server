@@ -81,15 +81,15 @@ Base.show(io::IO, r::Response) = begin
   print(io, ')')
 end
 
-Response(s::Integer=200) = Response(s, Headers())
-Response(data) = Response(200, data)
-Response(s::Integer, m::Dict) = Response(s, m, b"")
-Response(s::Integer, data) = Response(s, Headers("Content-Length"=>string(sizeof(data))), data)
-Response(m::Dict, data) = Response(200, m, data)
-Response(s::Integer, m::Dict, d::AbstractString) = begin
-  m = copy(m)
-  m["Content-Length"] = string(sizeof(d))
-  Response{AbstractString}(s, m, d)
+Response(data::Any) = Response(200, data)
+Response(s::Integer=200) = Response(s, Headers(), "")
+Response(r::Response) = r
+Response(s::Integer, m::Dict) = Response(s, m, "")
+Response(m::Dict, data::Any) = Response(200, m, data)
+Response(typ::AbstractString, data::Any) = Response(MIME(typ), data)
+Response(typ::MIME, data::Any) = begin
+  body = applicable(writemime, mime, data) ? sprint(writemime, mime, data) : data
+  Response(200, Dict("Content-Type"=>typ), body)
 end
 Response{T}(s::Integer, m::Dict, d::T) = Response{T}(s, m, d)
 
@@ -104,6 +104,10 @@ Base.write(io::IO, r::Response) = begin
   c += write(io, PROTOCOL, string(r.status), ' ', messages[r.status])
   for (key, value) in r.meta
     c += write(io, CLRF, string(key), b": ", string(value))
+  end
+  # add a Content-Length header if we can
+  if !haskey(r.meta, "Content-Length") && isa(r.data, AbstractString)
+    c += write(io, CLRF, b"Content-Length: ", string(sizeof(r.data)))
   end
   c += write(io, CLRF, CLRF)
   c + write(io, r.data)
