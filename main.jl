@@ -84,7 +84,13 @@ end
 Response(s::Integer=200) = Response(s, Headers())
 Response(data) = Response(200, data)
 Response(s::Integer, m::Dict) = Response(s, m, nothing)
-Response(s::Integer, data) = Response(s, Headers("Content-Length" => string(sizeof(data))), data)
+Response(s::Integer, data) = Response(s, Headers("Content-Length"=>string(sizeof(data))), data)
+Response(m::Dict, data) = Response(200, m, data)
+Response(s::Integer, m::Dict, d::AbstractString) = begin
+  m = copy(m)
+  m["Content-Length"] = string(sizeof(d))
+  Response{AbstractString}(s, m, d)
+end
 Response{T}(s::Integer, m::Dict, d::T) = Response{T}(s, m, d)
 
 const PROTOCOL = b"HTTP/1.1 "
