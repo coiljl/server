@@ -87,9 +87,9 @@ Response(r::Response) = r
 Response(s::Integer, m::Dict) = Response(s, m, "")
 Response(m::Dict, data::Any) = Response(200, m, data)
 Response(typ::AbstractString, data::Any) = Response(MIME(typ), data)
-Response(typ::MIME, data::Any) = begin
+Response(mime::MIME, data::Any) = begin
   body = applicable(writemime, mime, data) ? sprint(writemime, mime, data) : data
-  Response(200, Dict("Content-Type"=>typ), body)
+  Response(200, Dict("Content-Type"=>string(mime)), body)
 end
 Response{T}(s::Integer, m::Dict, d::T) = Response{T}(s, m, d)
 
