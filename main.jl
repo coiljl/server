@@ -83,7 +83,7 @@ end
 
 Response(s::Integer=200) = Response(s, Headers())
 Response(data) = Response(200, data)
-Response(s::Integer, m::Dict) = Response(s, m, nothing)
+Response(s::Integer, m::Dict) = Response(s, m, b"")
 Response(s::Integer, data) = Response(s, Headers("Content-Length"=>string(sizeof(data))), data)
 Response(m::Dict, data) = Response(200, m, data)
 Response(s::Integer, m::Dict, d::AbstractString) = begin
@@ -100,33 +100,22 @@ const CLRF = b"\r\n"
 Render a Response as an outgoing HTTP message
 """
 Base.write(io::IO, r::Response) = begin
-  write(io, PROTOCOL, string(r.status), ' ', messages[r.status])
+  c = 0
+  c += write(io, PROTOCOL, string(r.status), ' ', messages[r.status])
   for (key, value) in r.meta
-    write(io, CLRF, string(key), b": ", string(value))
+    c += write(io, CLRF, string(key), b": ", string(value))
   end
-  write(io, CLRF, CLRF)
-
-  r.data ≡ nothing && return
-  mime = MIME(get(r.meta, "Content-Type", "application/octet-stream"))
-  if mimewritable(mime, r.data)
-    writemime(io, mime, r.data)
-  else
-    write(io, r.data)
-  end
+  c += write(io, CLRF, CLRF)
+  c + write(io, r.data)
 end
 
 # If not defined in core
 try write(IOBuffer(), Base.TCPSocket()) catch
-  Base.write(to::IO, from::IO) =
+  Base.write(to::IO, from::IO) = begin
+    c = 0
     while !eof(from)
-      write(to, readavailable(from))
+      c += write(to, readavailable(from))
     end
-end
-
-##
-# Render errors as they appear in a TTY
-#
-Base.writemime(io::IO, ::MIME"application/octet-stream", e::Tuple{Exception,Vector{Ptr{Void}}}) = begin
-  Base.showerror(io, e[1])
-  Base.show_backtrace(io, e[2])
+    return c
+  end
 end
