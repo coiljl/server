@@ -118,14 +118,3 @@ Base.write(io::IO, r::Response) = begin
   c += write(io, CLRF, CLRF)
   c + write(io, r.data)
 end
-
-# If not defined in core
-try write(IOBuffer(), Base.TCPSocket()) catch
-  Base.write(to::IO, from::IO) = begin
-    c = 0
-    while !eof(from)
-      c += write(to, readavailable(from))
-    end
-    return c
-  end
-end
