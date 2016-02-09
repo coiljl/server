@@ -54,7 +54,7 @@ parse an incoming HTTP stream into a nice Request object
 """
 Request(io::IO) = begin
   head = readuntil(io, "\r\n")
-  verb, path = split(head, ' ')
+  verb, path = split(rstrip(head), ' ')
   meta = Headers()
   for line in eachline(io)
     line = rstrip(line)
