@@ -83,9 +83,9 @@ end
 
 Response(data::Any) = Response(200, data)
 Response(s::Integer=200) = Response(s, Headers(), "")
-Response(r::Response) = r
 Response(s::Integer, m::Dict) = Response(s, m, "")
 Response(m::Dict, data::Any) = Response(200, m, data)
+Response(s::Integer, data::Any) = Response(s, Headers(), data)
 Response(typ::AbstractString, data::Any) = Response(MIME(typ), data)
 Response(mime::MIME, data::Any) = begin
   body = applicable(writemime, mime, data) ? sprint(writemime, mime, data) : data
