@@ -100,21 +100,20 @@ const CLRF = b"\r\n"
 Render a Response as an outgoing HTTP message
 """
 Base.write(io::IO, r::Response) = begin
-  c = 0
-  c += write(io, PROTOCOL, string(r.status), ' ', messages[r.status])
+  write(io, PROTOCOL, string(r.status), ' ', messages[r.status])
   for (key, value) in r.meta
     if key == "Set-Cookie"
       for cookie in vcat(value)
-        c += write(io, CLRF, key, b": ", cookie[1], '=', cookie[2])
+        write(io, CLRF, key, b": ", cookie[1], '=', cookie[2])
       end
     else
-      c += write(io, CLRF, string(key), b": ", string(value))
+      write(io, CLRF, string(key), b": ", string(value))
     end
   end
   # add a Content-Length header if we can
   if !haskey(r.meta, "Content-Length") && isa(r.data, Union{AbstractString, Vector{UInt8}})
-    c += write(io, CLRF, b"Content-Length: ", string(sizeof(r.data)))
+    write(io, CLRF, b"Content-Length: ", string(sizeof(r.data)))
   end
-  c += write(io, CLRF, CLRF)
-  c + write(io, r.data)
+  write(io, CLRF, CLRF)
+  write(io, r.data)
 end
