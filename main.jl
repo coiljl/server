@@ -50,8 +50,13 @@ Base.show(io::IO, r::Request) = begin
 end
 
 """
-parse an incoming HTTP stream into a nice Request object
+parse an incoming HTTP stream into a Request object
+
+```julia
+Request("GET /")
+```
 """
+Request(http::AbstractString) = Request(IOBuffer(http))
 Request(io::IO) = begin
   head = readuntil(io, "\r\n")
   verb, path = split(rstrip(head), ' ')
