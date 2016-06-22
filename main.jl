@@ -29,13 +29,19 @@ serve(fn::Any, port::Integer) = begin
     sock = accept(server)
     @schedule begin
       try
-        write(sock, fn(Request(sock)))
-      catch e
-        # ignore epipe errors since it just means the client no
-        # longer cares about the response
-        if !isa(e, Base.UVError) || e.code != -32
-          schedule(task, e; error=true)
+        request = Request(sock)
+        try
+          write(sock, fn(request))
+        catch e
+          # ignore epipe errors since it just means the client no
+          # longer cares about the response
+          if !isa(e, Base.UVError) || e.code != -32
+            write(sock, Response(500))
+            schedule(task, e; error=true)
+          end
         end
+      catch e
+        write(sock, Response(400))
       end
       close(sock) # TODO: handle keep-alive
     end
