@@ -27,20 +27,18 @@ serve(fn::Any, port::Integer) = begin
   server = listen(port)
   task = @schedule while isopen(server)
     sock = accept(server)
-    @schedule begin
-      try
-        request = Request(sock)
-        write(sock, fn(request))
-      catch e
-        # ignore EPIPE errors since it just means the client no
-        # longer cares about the response
-        if !isa(e, Base.UVError) || e.code != -32
-          isopen(sock) && write(sock, Response(500))
-          schedule(task, e; error=true)
-        end
+    try
+      request = Request(sock)
+      write(sock, fn(request))
+    catch e
+      # ignore EPIPE errors since it just means the client no
+      # longer cares about the response
+      if !isa(e, Base.UVError) || e.code != -32
+        isopen(sock) && write(sock, Response(500))
+        rethrow(e)
       end
-      close(sock) # TODO: handle keep-alive
     end
+    close(sock) # TODO: handle keep-alive
   end
   HTTPServer(server, task)
 end
