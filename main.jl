@@ -1,7 +1,7 @@
 @require "github.com/coiljl/status" messages
 @require "github.com/coiljl/URI" URI
 
-immutable HTTPServer <: Base.IOServer
+struct HTTPServer <: Base.IOServer
   tcp::Base.TCPServer
   task::Task
 end
@@ -43,9 +43,9 @@ serve(fn::Any, port::Integer) = begin
   HTTPServer(server, task)
 end
 
-typealias Headers Dict{ASCIIString, ASCIIString}
+const Headers = Dict{String, String}
 
-immutable Request{method}
+struct Request{method}
   uri::URI
   meta::Headers
   data::IO
@@ -77,12 +77,12 @@ Request(io::IO) = begin
     key, value = split(line, ": ")
     meta[key] = value
   end
-  Request{symbol(verb)}(URI(path), meta, io)
+  Request{Symbol(verb)}(URI(path), meta, io)
 end
 
 verb{method}(::Request{method}) = string(method)
 
-immutable Response{T}
+struct Response{T}
   status::Integer
   meta::Dict
   data::T
@@ -106,7 +106,6 @@ Response(mime::MIME, data::Any) = begin
   body = applicable(writemime, STDOUT, mime, data) ? sprint(writemime, mime, data) : data
   Response(200, Dict("Content-Type"=>string(mime)), body)
 end
-Response{T}(s::Integer, m::Dict, d::T) = Response{T}(s, m, d)
 
 const PROTOCOL = b"HTTP/1.1 "
 const CLRF = b"\r\n"

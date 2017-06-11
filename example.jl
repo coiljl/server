@@ -1,6 +1,6 @@
 @require "." serve Response Request
 
-type InfiniteResponse end
+struct InfiniteResponse end
 Base.write(io::IO, r::InfiniteResponse) = begin
   write(io, Response(200))
   while true
