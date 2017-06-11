@@ -43,6 +43,26 @@ serve(fn::Any, port::Integer) = begin
   HTTPServer(server, task)
 end
 
+"""
+serve without the task wrapper so that stack traces can be preserved
+"""
+debug(fn::Any, port::Integer) = begin
+  server = listen(port)
+  while isopen(server)
+    sock = accept(server)
+    try
+      request = Request(sock)
+      write(sock, fn(request))
+    catch e
+      if !isa(e, Base.UVError) || e.code != -32
+        isopen(sock) && write(sock, Response(500))
+        rethrow(e)
+      end
+    end
+    close(sock) # TODO: handle keep-alive
+  end
+end
+
 const Headers = Dict{String, String}
 
 struct Request{method}
