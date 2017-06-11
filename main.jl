@@ -92,7 +92,6 @@ Request(io::IO) = begin
   verb, path = split(rstrip(head), ' ')
   meta = Headers()
   for line in eachline(io)
-    line = rstrip(line)
     isempty(line) && break
     key, value = split(line, ": ")
     meta[key] = value
