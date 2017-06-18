@@ -1,0 +1,40 @@
+#!/usr/bin/env julia
+@require "github.com/docopt/DocOpt.jl" docopt
+@require ".." handle_requests Request Response
+
+const usage = """
+
+Usage:
+  serve [options] <file>
+  serve -h | --help
+  serve -v | --version
+
+Options:
+  -p --port     The port to connect to. By default it will choose a random port
+  -h --help     Show this screen
+  -v --version  Show version
+
+"""
+
+const args = docopt(usage, version=v"0.0.0")
+
+const port, server = if args["--port"] != false
+  port = parse(Int, args["--port"])
+  port, listen(port)
+else
+  listenany(3000)
+end
+
+println(port)
+
+const path = joinpath(pwd(), args["<file>"])
+const fn = eval(Module(:__anon__),
+                Expr(:toplevel,
+                     :(using Kip),
+                     :(eval(x) = Main.Core.eval(__anon__, x)),
+                     :(eval(m, x) = Main.Core.eval(m, x)),
+                     :(const Response = $Response),
+                     :(const Request = $Request),
+                     :(include($path))))
+
+handle_requests(fn, server)

@@ -23,45 +23,32 @@ println("server listening on http://localhost:3000")
 wait(server)
 ```
 """
-serve(fn::Any, port::Integer) = begin
-  server = listen(port)
-  task = @schedule while isopen(server)
-    sock = accept(server)
-    try
-      request = Request(sock)
-      write(sock, fn(request))
-    catch e
-      # ignore EPIPE errors since it just means the client no
-      # longer cares about the response
-      if !isa(e, Base.UVError) || e.code != -32
-        isopen(sock) && write(sock, Response(500))
-        rethrow(e)
-      end
-    end
-    close(sock) # TODO: handle keep-alive
-  end
-  HTTPServer(server, task)
+serve(fn::Any, port::Integer) = serve(fn, listen(port))
+serve(fn::Any, server::Base.TCPServer) = HTTPServer(server, @schedule handle_requests(fn, server))
+
+handle_requests(fn::Any, server::Base.TCPServer) = begin
+  while isopen(server)
+   sock = accept(server)
+   try
+     request = Request(sock)
+     write(sock, fn(request))
+   catch e
+     # ignore EPIPE errors since it just means the client no
+     # longer cares about the response
+     if !isa(e, Base.UVError) || e.code != -32
+       isopen(sock) && write(sock, Response(500))
+       rethrow(e)
+     end
+   end
+   close(sock) # TODO: handle keep-alive
+ end
 end
 
 """
 serve without the task wrapper so that stack traces can be preserved
 """
-debug(fn::Any, port::Integer) = begin
-  server = listen(port)
-  while isopen(server)
-    sock = accept(server)
-    try
-      request = Request(sock)
-      write(sock, fn(request))
-    catch e
-      if !isa(e, Base.UVError) || e.code != -32
-        isopen(sock) && write(sock, Response(500))
-        rethrow(e)
-      end
-    end
-    close(sock) # TODO: handle keep-alive
-  end
-end
+debug(fn::Any, port::Integer) = debug(fn, listen(port))
+debug(fn::Any, server::Base.TCPServer) = handle_requests(fn, server)
 
 const Headers = Dict{String, String}
 
