@@ -1,4 +1,5 @@
 #!/usr/bin/env julia
+using Kip
 @require "github.com/docopt/DocOpt.jl" docopt
 @require ".." handle_requests Request Response
 
