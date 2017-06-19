@@ -11,9 +11,9 @@ Usage:
   serve -v | --version
 
 Options:
-  -p --port     The port to connect to. By default it will choose a random port
-  -h --help     Show this screen
-  -v --version  Show version
+  -p --port=<number> The port to connect to. By default it will choose a random port
+  -h --help          Show this screen
+  -v --version       Show version
 
 """
 
