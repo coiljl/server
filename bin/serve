@@ -19,7 +19,7 @@ Options:
 
 const args = docopt(usage, version=v"0.0.0")
 
-const port, server = if args["--port"] != false
+const port, server = if args["--port"] != nothing
   port = parse(Int, args["--port"])
   port, listen(port)
 else

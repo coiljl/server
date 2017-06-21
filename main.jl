@@ -76,7 +76,7 @@ Request("GET /")
 Request(http::AbstractString) = Request(IOBuffer(http))
 Request(io::IO) = begin
   head = readuntil(io, "\r\n")
-  verb, path = split(rstrip(head), ' ')
+  verb, path = split(head, ' ')
   meta = Headers()
   for line in eachline(io)
     isempty(line) && break
