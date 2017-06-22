@@ -1,41 +1,29 @@
 #!/usr/bin/env julia
 using Kip
-@require "github.com/docopt/DocOpt.jl" docopt
+@require "github.com/jkroso/SimpleCLI.jl" @CLI
 @require ".." handle_requests Request Response
 
-const usage = """
-
-Usage:
-  serve [options] <file>
-  serve -h | --help
-  serve -v | --version
-
-Options:
-  -p --port=<number> The port to connect to. By default it will choose a random port
-  -h --help          Show this screen
-  -v --version       Show version
-
 """
+Serve <file> on <port>. If you don't define a port one will be selected
+randomly and printed to STDOUT
+"""
+@CLI (file::String; port::Integer=0)
 
-const args = docopt(usage, version=v"0.0.0")
-
-const port, server = if args["--port"] != nothing
-  port = parse(Int, args["--port"])
+const p, server = if port != 0
   port, listen(port)
 else
   listenany(3000)
 end
 
-println(port)
+println(p)
 
-const path = joinpath(pwd(), args["<file>"])
-const fn = eval(Module(:__anon__),
+const fn = eval(Module(Symbol(file)),
                 Expr(:toplevel,
                      :(using Kip),
                      :(eval(x) = Main.Core.eval(__anon__, x)),
                      :(eval(m, x) = Main.Core.eval(m, x)),
                      :(const Response = $Response),
                      :(const Request = $Request),
-                     :(include($path))))
+                     :(include($(joinpath(pwd(), file))))))
 
 handle_requests(fn, server)
