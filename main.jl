@@ -1,8 +1,9 @@
 @require "github.com/coiljl/status" messages
 @require "github.com/coiljl/URI" URI
+import Sockets: TCPServer, listen, accept
 
 struct HTTPServer <: Base.IOServer
-  tcp::Base.TCPServer
+  tcp::TCPServer
   task::Task
 end
 
@@ -24,18 +25,16 @@ wait(server)
 ```
 """
 serve(fn::Any, port::Integer) = serve(fn, listen(port))
-serve(fn::Any, server::Base.TCPServer) = HTTPServer(server, @schedule handle_requests(fn, server))
+serve(fn::Any, server::TCPServer) = HTTPServer(server, @async handle_requests(fn, server))
 
-handle_requests(fn::Any, server::Base.TCPServer) = begin
+handle_requests(fn::Any, server::TCPServer) = begin
   while isopen(server)
    sock = accept(server)
    try
      request = Request(sock)
      write(sock, fn(request))
    catch e
-     # ignore EPIPE errors since it just means the client no
-     # longer cares about the response
-     if !isa(e, Base.UVError) || e.code != -32
+     if !isEPIPE(e)
        isopen(sock) && write(sock, Response(500))
        rethrow(e)
      end
@@ -44,11 +43,15 @@ handle_requests(fn::Any, server::Base.TCPServer) = begin
  end
 end
 
+# EPIPE just means we tried to write to a closed stream
+isEPIPE(e::Base.IOError) = e.code == -Libc.EPIPE
+isEPIPE(e::Any) = false
+
 """
 serve without the task wrapper so that stack traces can be preserved
 """
 debug(fn::Any, port::Integer) = debug(fn, listen(port))
-debug(fn::Any, server::Base.TCPServer) = handle_requests(fn, server)
+debug(fn::Any, server::TCPServer) = handle_requests(fn, server)
 
 const Headers = Dict{String, String}
 
@@ -60,9 +63,9 @@ end
 
 Base.show(io::IO, r::Request) = begin
   print(io, typeof(r), '(', '"', r.uri, '"',  ',')
-  showcompact(io, r.meta)
+  repr(io, r.meta)
   print(io, ',')
-  showcompact(io, r.data)
+  repr(io, r.data)
   print(io, ')')
 end
 
@@ -78,7 +81,6 @@ Request(io::IO) = begin
   head = readuntil(io, "\r\n")
   parts = split(head, ' ')
   if length(parts) < 2
-    Vector{UInt8}(head)|>showcompact
     error("malformed HTTP head: $head")
   end
   verb, path = parts
@@ -91,7 +93,7 @@ Request(io::IO) = begin
   Request{Symbol(verb)}(URI(path), meta, io)
 end
 
-verb{method}(::Request{method}) = string(method)
+verb(::Request{method}) where method = String(method)
 
 struct Response{T}
   status::Integer
