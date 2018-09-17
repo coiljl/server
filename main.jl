@@ -137,11 +137,27 @@ Base.write(io::IO, r::Response) = begin
       b += write(io, CLRF, string(key), b": ", string(value))
     end
   end
-  # add a Content-Length header if we can
-  if !haskey(r.meta, "Content-Length") && isa(r.data, Union{AbstractString, Vector{UInt8}})
-    b += write(io, CLRF, b"Content-Length: ", string(sizeof(r.data)))
+  write_body(io, r.data, r.meta, b)
+end
+
+write_body(io::IO, data::Any, meta::Dict, b=0) = write_body(io, sprint(write, data), meta, b)
+
+write_body(io::IO, data::Union{AbstractString,Vector{UInt8}}, meta::Dict, b=0) = begin
+  if !haskey(meta, "Content-Length")
+    b += write(io, CLRF, b"Content-Length: ", string(sizeof(data)))
   end
   b += write(io, CLRF, CLRF)
-  b += write(io, r.data)
-  return b
+  b + write(io, data)
+end
+
+write_body(io::IO, data::IO, meta::Dict, b=0) = begin
+  if !haskey(meta, "Transfer-Encoding")
+    b += write(io, CLRF, b"Transfer-Encoding: chunked")
+  end
+  b += write(io, CLRF, CLRF)
+  while !eof(data)
+    chunk = readavailable(data)
+    b += write(io, string(sizeof(chunk), base=16), CLRF, chunk, CLRF)
+  end
+  b + write(io, b"0", CLRF, CLRF)
 end

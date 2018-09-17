@@ -1,17 +1,20 @@
-@require "." serve Response Request
+@require ".." serve Response Request
 
-struct InfiniteResponse end
-Base.write(io::IO, r::InfiniteResponse) = begin
-  write(io, Response(200))
-  while true
-    write(io, '-')
-    sleep(0.1)
-  end
+mutable struct RepeatStream <: IO
+  remaining::Int
 end
+Base.bytesavailable(s::RepeatStream) = s.remaining > 0 ? 1 : 0
+Base.read(s::RepeatStream, nb::Integer) = begin
+  s.remaining -= nb
+  Vector{UInt8}(repeat("-", nb))
+end
+Base.eof(s::RepeatStream) = s.remaining <= 0
+Base.readavailable(s::RepeatStream) = read(s, bytesavailable(s))
+
 handle(r::Request{:GET}) = Response("Hello World")
 handle(r::Request{:PUT}) = throw(error("Boom"))
-handle(r::Request{:POST}) = InfiniteResponse()
-handle{verb}(r::Request{verb}) = Response("That was a $verb request")
+handle(r::Request{:POST}) = Response(200, RepeatStream(rand(UInt8)))
+handle(r::Request{verb}) where verb = Response("That was a $verb request")
 
 server = serve(handle, 8000)
 
