@@ -1,6 +1,6 @@
 @require "github.com/coiljl/status" messages
 @require "github.com/coiljl/URI" URI
-import Sockets: TCPServer, listen, accept
+import Sockets: TCPServer, listen, accept, TCPSocket
 
 struct HTTPServer <: Base.IOServer
   tcp::TCPServer
@@ -30,17 +30,26 @@ serve(fn::Any, server::TCPServer) = HTTPServer(server, @async handle_requests(fn
 handle_requests(fn::Any, server::TCPServer) = begin
   while isopen(server)
    sock = accept(server)
-   try
-     request = Request(sock)
-     write(sock, fn(request))
-   catch e
-     if !isEPIPE(e)
-       isopen(sock) && write(sock, Response(500))
-       rethrow(e)
+   keepalive = true
+   while keepalive && request_received(sock)
+     try
+       request = Request(sock)
+       keepalive = get(request.meta, "Connection", "keep-alive") == "keep-alive"
+       write(sock, fn(request))
+     catch e
+       if !isEPIPE(e)
+         isopen(sock) && write(sock, Response(500))
+         rethrow(e)
+       end
      end
    end
-   close(sock) # TODO: handle keep-alive
+   close(sock)
  end
+end
+
+request_received(io::TCPSocket) = begin
+  Base.wait_readnb(io, 1)
+  isopen(io)
 end
 
 # EPIPE just means we tried to write to a closed stream
@@ -80,9 +89,7 @@ Request(http::AbstractString) = Request(IOBuffer(http))
 Request(io::IO) = begin
   head = readuntil(io, "\r\n")
   parts = split(head, ' ')
-  if length(parts) < 2
-    error("malformed HTTP head: $head")
-  end
+  @assert length(parts) >= 2 "malformed HTTP head: $(repr(head))"
   verb, path = parts
   meta = Headers()
   for line in eachline(io)
