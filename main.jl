@@ -137,27 +137,22 @@ Base.write(io::IO, r::Response) = begin
       b += write(io, CLRF, string(key), b": ", string(value))
     end
   end
-  write_body(io, r.data, r.meta, b)
+
+  if suggested_encoding(r) == :chunked
+    b += write(io, CLRF, b"Transfer-Encoding: chunked", CLRF, CLRF)
+    while !eof(r.data)
+      nb = bytesavailable(r.data)
+      b += write(io, string(nb, base=16), CLRF, read(r.data, nb), CLRF)
+    end
+    return b + write(io, b"0", CLRF, CLRF)
+  end
+
+  bytes = buffer(r)
+  b + write(io, CLRF, b"Content-Length: ", string(sizeof(bytes)), CLRF, CLRF, bytes)
 end
 
-write_body(io::IO, data::Any, meta::Dict, b=0) = write_body(io, sprint(write, data), meta, b)
+suggested_encoding(::Response) = :identity
+suggested_encoding(::Response{<:IO}) = :chunked
 
-write_body(io::IO, data::Union{AbstractString,Vector{UInt8}}, meta::Dict, b=0) = begin
-  if !haskey(meta, "Content-Length")
-    b += write(io, CLRF, b"Content-Length: ", string(sizeof(data)))
-  end
-  b += write(io, CLRF, CLRF)
-  b + write(io, data)
-end
-
-write_body(io::IO, data::IO, meta::Dict, b=0) = begin
-  if !haskey(meta, "Transfer-Encoding")
-    b += write(io, CLRF, b"Transfer-Encoding: chunked")
-  end
-  b += write(io, CLRF, CLRF)
-  while !eof(data)
-    chunk = readavailable(data)
-    b += write(io, string(sizeof(chunk), base=16), CLRF, chunk, CLRF)
-  end
-  b + write(io, b"0", CLRF, CLRF)
-end
+buffer(r::Response{<:Union{AbstractString,Vector{UInt8}}}) = r.data
+buffer(r::Response) = sprint(write, r.data)
