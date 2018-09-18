@@ -2,6 +2,7 @@
 using Kip
 @require "github.com/jkroso/SimpleCLI.jl" @CLI
 @require ".." handle_requests Request Response
+import Sockets: listen, listenany
 
 """
 Serve <file> on <port>. If you don't define a port one will be selected
@@ -17,13 +18,12 @@ end
 
 println(p)
 
-const fn = eval(Module(Symbol(file)),
-                Expr(:toplevel,
-                     :(using Kip),
-                     :(eval(x) = Main.Core.eval(__anon__, x)),
-                     :(eval(m, x) = Main.Core.eval(m, x)),
-                     :(const Response = $Response),
-                     :(const Request = $Request),
-                     :(include($(joinpath(pwd(), file))))))
+const mod = @eval module $(Symbol(file))
+  using Kip
+  const Response = $Response
+  const Request = $Request
+end
+
+const fn = Core.eval(mod, :(include($(joinpath(pwd(), file)))))
 
 handle_requests(fn, server)
